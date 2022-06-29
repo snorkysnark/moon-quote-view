@@ -1,6 +1,7 @@
 <script lang="ts">
     import ePub, { Book } from "epubjs";
     import FileInput from "./FileInput.svelte";
+    import BookDisplay from "./BookDisplay.svelte";
     import { arrangeAsChapters } from "./chapters.js";
     import type { Chapter, FoundJson } from "./chapters.js";
 
@@ -45,14 +46,15 @@
         on:fileChosen={onJsonInput}
     />
 
-    {#if chapters}
+    {#if book && chapters}
         {#each chapters as chapter}
             {#if chapter.name}
                 <h1>{chapter.name}</h1>
             {/if}
             <h2>{chapter.id}</h2>
             {#each chapter.quotes as quote}
-                <p>{quote.cfi}</p>
+                <p>{quote.text}</p>
+                <BookDisplay book={book} cfi={quote.cfi} />
             {/each}
         {/each}
     {/if}
