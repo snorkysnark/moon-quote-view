@@ -5,28 +5,32 @@
     export let cfi: string;
 
     let viewContainer: HTMLElement;
+    let rendition: Rendition;
 
     function renderBook(book: Book, container: HTMLElement, cfi: string) {
         if (book && container && cfi) {
-            const rendition = book.renderTo(container, {
-                height: "40em",
-                allowScriptedContent: true,
+            rendition = book.renderTo(container, {
+                width: "100%",
+                height: "100%",
+                flow: "scrolled"
             });
-            rendition.display(cfi);
-            rendition.annotations.highlight(cfi);
 
-            /* rendition.on("resized", () => { */
-            /*     console.log("resized"); */
-            /*     rendition.display(cfi); */
-            /* }); */
+            rendition.annotations.highlight(cfi);
+            rendition.display(cfi);
+            rendition.on("resized", () => rendition.display(cfi));
         }
     }
     $: renderBook(book, viewContainer, cfi);
 </script>
 
 <main>
-    <div bind:this={viewContainer} />
+    <div id="reader" bind:this={viewContainer} />
 </main>
 
 <style>
+    #reader {
+        height: 25em;
+        width: 100%;
+        border: 2px solid;
+    }
 </style>
