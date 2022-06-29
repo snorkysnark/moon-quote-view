@@ -52,6 +52,7 @@
         padding-bottom: 0.2em;
         padding-left: 0.3em;
         padding-right: 0.4em;
+        margin: 0.1em;
         border-radius: 0.3em;
         display: inline-flex;
         flex-direction: row;
