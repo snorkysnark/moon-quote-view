@@ -1,3 +1,9 @@
+<script lang="ts" context="module">
+    export interface FileChosen {
+        file: File;
+    }
+</script>
+
 <script lang="ts">
     import uploadIcon from "./assets/upload-svgrepo-com.svg";
     import okIcon from "./assets/ok-svgrepo-com.svg";
@@ -7,7 +13,7 @@
     export let accept: string = "";
     export let uploaded: boolean = false;
 
-    const dispatch = createEventDispatcher<{ fileChosen: { file: File } }>();
+    const dispatch = createEventDispatcher<{ fileChosen: FileChosen }>();
     let input: HTMLInputElement;
 
     function onInputChange() {

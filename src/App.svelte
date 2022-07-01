@@ -1,47 +1,75 @@
 <script lang="ts">
     import ePub, { Book } from "epubjs";
-    import FileInput from "./FileInput.svelte";
-    import BookScrollView from "./BookScrollView.svelte";
-    import ToC from "./ToC.svelte";
+    import FileInput, { FileChosen } from "./FileInput.svelte";
+    import BookView from "./BookView.svelte";
+    import ToC, { TocClick } from "./ToC.svelte";
+    import { arrangeByHref, extractCfis, mergeTocWithQuotes } from "./quotes.js";
+    import type { FoundJson, QuotesByHref, TocItem } from "./quotes.js";
 
     let book: Book = null;
-    /* let location = "epubcfi(/6/22!/4/36[ris3-1]/4,/1:0,/6[note-26-backlink]/1:2)"; */
-    let highlights = [
-        "epubcfi(/6/22!/4/36[ris3-1]/4,/1:0,/6[note-26-backlink]/1:2)"
-    ];
+    let location: string | number = 0;
 
-    function onBookInput(event: CustomEvent<{ file: File }>) {
+    let quotesByHref: QuotesByHref = null;
+    let highlights: string[] = [];
+    let toc: TocItem[];
+
+    $: if (book) toc = mergeTocWithQuotes(book.navigation.toc, quotesByHref);
+    $: if (quotesByHref) highlights = extractCfis(quotesByHref);
+
+    function onBookInput(event: CustomEvent<FileChosen>) {
         let reader = new FileReader();
         reader.readAsArrayBuffer(event.detail.file);
 
         reader.addEventListener("loadend", () => {
             ePub(reader.result).opened.then((openedBook) => {
-                book = openedBook;
                 console.log(book);
+                book = openedBook;
+                location = 0;
             });
         });
+    }
+
+    function onJsonInput(event: CustomEvent<FileChosen>) {
+        let reader = new FileReader();
+        reader.readAsText(event.detail.file);
+
+        reader.addEventListener("loadend", () => {
+            let foundJson: FoundJson = JSON.parse(reader.result as string);
+            quotesByHref = arrangeByHref(foundJson);
+            console.log(quotesByHref);
+        });
+    }
+
+    function onTocClick(event: CustomEvent<TocClick>) {
+        location = event.detail.location;
     }
 </script>
 
 <main>
-    <div class="container">
+    <div class="horizontal">
         <FileInput
             label="EPUB"
             accept="application/epub+zip"
             uploaded={book !== null}
             on:fileChosen={onBookInput}
         />
-        {#if book}
-            <div id="bookMenu">
-                <div id="bookContainer">
-                    <BookScrollView book={book} location={0} />
-                </div>
-                <div id="toc">
-                    <ToC items={book.navigation.toc} />
-                </div>
-            </div>
-        {/if}
+        <FileInput
+            label="found.json"
+            accept="application/json"
+            uploaded={quotesByHref !== null}
+            on:fileChosen={onJsonInput}
+        />
     </div>
+    {#if book}
+        <div id="bookUI">
+            <div id="bookWrapper">
+                <BookView {book} display={location} {highlights} />
+            </div>
+            <nav id="toc">
+                <ToC items={toc} on:click={onTocClick} />
+            </nav>
+        </div>
+    {/if}
 </main>
 
 <style>
@@ -55,24 +83,31 @@
             Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
     }
 
-    .container {
+    main {
         display: flex;
         flex-flow: column;
         height: 100vh;
     }
 
-    #bookMenu {
+    .horizontal {
         display: flex;
-        flex-flow: row;
-        height: 100%;
+        flex-direction: row;
     }
 
-    #bookContainer {
+    #bookUI {
+        display: flex;
+        flex-direction: row;
+        overflow: hidden;
         flex-grow: 1;
     }
 
+    #bookWrapper {
+        flex-grow: 1;
+        overflow: hidden;
+    }
+
     #toc {
-        flex-basis: 25%;
-        overflow: scroll;
+        width: 30%;
+        overflow-y: scroll;
     }
 </style>
