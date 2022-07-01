@@ -1,12 +1,14 @@
 <script lang="ts">
     import ePub, { Book } from "epubjs";
     import FileInput from "./FileInput.svelte";
-    import BookDisplay from "./BookDisplay.svelte";
-    import { arrangeAsChapters } from "./chapters.js";
-    import type { Chapter, FoundJson } from "./chapters.js";
+    import BookScrollView from "./BookScrollView.svelte";
+    import ToC from "./ToC.svelte";
 
     let book: Book = null;
-    let chapters: Chapter[] = null;
+    /* let location = "epubcfi(/6/22!/4/36[ris3-1]/4,/1:0,/6[note-26-backlink]/1:2)"; */
+    let highlights = [
+        "epubcfi(/6/22!/4/36[ris3-1]/4,/1:0,/6[note-26-backlink]/1:2)"
+    ];
 
     function onBookInput(event: CustomEvent<{ file: File }>) {
         let reader = new FileReader();
@@ -19,80 +21,58 @@
             });
         });
     }
-
-    function onJsonInput(event: CustomEvent<{ file: File }>) {
-        let reader = new FileReader();
-        reader.readAsText(event.detail.file);
-
-        reader.addEventListener("loadend", () => {
-            let found_json = JSON.parse(reader.result as string) as FoundJson;
-            chapters = arrangeAsChapters(found_json);
-            console.log(chapters);
-        });
-    }
 </script>
 
 <main>
-    <div class="centered">
+    <div class="container">
         <FileInput
             label="EPUB"
             accept="application/epub+zip"
             uploaded={book !== null}
             on:fileChosen={onBookInput}
         />
-        <FileInput
-            label="found.json"
-            accept="application/json"
-            uploaded={chapters !== null}
-            on:fileChosen={onJsonInput}
-        />
-    </div>
-
-        {#if book && chapters}
-            {#each chapters as chapter}
-                {#if chapter.name}
-                    <h1>{chapter.name}</h1>
-                {/if}
-                <h2>{chapter.id}</h2>
-    
-    
-                <div class="centered">
-                    <div class="gridContainer">
-                        {#each chapter.quotes as quote}
-                            <BookDisplay book={book} cfi={quote.cfi} />
-                        {/each}
-                    </div>
+        {#if book}
+            <div id="bookMenu">
+                <div id="bookContainer">
+                    <BookScrollView book={book} location={0} />
                 </div>
-            {/each}
+                <div id="toc">
+                    <ToC items={book.navigation.toc} />
+                </div>
+            </div>
         {/if}
+    </div>
 </main>
 
 <style>
+    :global(body) {
+        margin: 0;
+        padding: 0;
+    }
+
     :root {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
             Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
     }
 
-    .centered {
+    .container {
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 100%;
+        flex-flow: column;
+        height: 100vh;
     }
 
-    .gridContainer {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, 50em);
-        justify-content: center;
-        width: 100%;
+    #bookMenu {
+        display: flex;
+        flex-flow: row;
+        height: 100%;
     }
 
-    h1 {
-        margin: 0;
+    #bookContainer {
+        flex-grow: 1;
     }
 
-    h2 {
-        margin-top: 0;
-        color: gray;
+    #toc {
+        flex-basis: 25%;
+        overflow: scroll;
     }
 </style>
